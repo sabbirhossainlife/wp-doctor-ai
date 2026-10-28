@@ -1,0 +1,1203 @@
+// WP Doctor AI — Milestone 1 schema.
+// Auth models (User, Session, Account, Verification) follow the fields required
+// by Better Auth's Prisma adapter (see Prisma's official Better Auth guide).
+// The only app-specific additions are User.role and the Website model.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  // Server-controlled role. Never accepted from client input: Better Auth is
+  // configured with input:false for this field, and registration strips it.
+  role          String    @default("USER")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  websites      Website[]
+  pairingIntents ConnectorPairingIntent[]
+  scans         Scan[]
+  conflictDiagnostics ConflictDiagnostic[]
+  wooCommerceDiagnostics WooCommerceDiagnostic[]
+  elementorDiagnostics ElementorDiagnostic[]
+  speedDiagnostics    SpeedDiagnostic[]
+  sslRedirectDiagnostics SslRedirectDiagnostic[]
+  contactEmailDiagnostics ContactEmailDiagnostic[]
+  securityDiagnostics SecurityDiagnostic[]
+  malwareDiagnostics  MalwareDiagnostic[]
+  seoDiagnostics      SeoDiagnostic[]
+  backupArtifacts     BackupArtifact[]
+  backupOperations    BackupOperation[]
+  backupDownloadTokens BackupDownloadToken[]
+  monitors            WebsiteMonitor[]
+  maintenanceWindows  MaintenanceWindow[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+model Website {
+  id               String   @id @default(cuid())
+  name             String
+  // Normalized in lib/websites.js: lowercased host, http/https only, no
+  // credentials, no fragment, default ports stripped, trailing slashes removed
+  // (root URL keeps no trailing slash). Unique per user, not globally, so two
+  // customers may each register the same public site.
+  normalizedUrl    String
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // NOT_CONNECTED until the future WordPress connector actually pairs.
+  // Never set to CONNECTED or SCANNED by Milestone 1 code.
+  connectionStatus String   @default("NOT_CONNECTED")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  pairingIntents   ConnectorPairingIntent[]
+  connection       WebsiteConnection?
+  snapshots        ConnectorDiagnosticSnapshot[]
+  conflictDiagnostics ConflictDiagnostic[]
+  wooCommerceDiagnostics WooCommerceDiagnostic[]
+  elementorDiagnostics ElementorDiagnostic[]
+  sslRedirectDiagnostics SslRedirectDiagnostic[]
+  contactEmailDiagnostics ContactEmailDiagnostic[]
+  securityDiagnostics SecurityDiagnostic[]
+  malwareDiagnostics  MalwareDiagnostic[]
+  seoDiagnostics      SeoDiagnostic[]
+  backupArtifactsAsSource BackupArtifact[] @relation("BackupArtifactSource")
+  backupOperationsAsSource BackupOperation[] @relation("BackupOperationSource")
+  backupOperationsAsDestination BackupOperation[] @relation("BackupOperationDestination")
+  monitors WebsiteMonitor[]
+
+  @@unique([userId, normalizedUrl])
+  @@index([userId])
+  @@map("website")
+}
+
+// Milestone 5 — Secure WordPress Connector.
+// Pairing codes and connector credentials are NEVER stored raw: only
+// SHA-256 hashes live in the database. The raw values are returned once
+// at creation time and must be kept by the caller (plugin) afterwards.
+model ConnectorPairingIntent {
+  id           String   @id @default(cuid())
+  websiteId    String
+  website      Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash     String
+  status       String   @default("PENDING") // PENDING | CONSUMED | EXPIRED | REVOKED
+  expiresAt    DateTime
+  attemptCount Int      @default(0)
+  consumedAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([websiteId])
+  @@index([codeHash])
+  @@map("connector_pairing_intent")
+}
+
+model WebsiteConnection {
+  id             String   @id @default(cuid())
+  websiteId      String   @unique
+  website        Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  status         String   @default("ACTIVE") // ACTIVE | REVOKED
+  credentialHash String
+  pairedAt       DateTime @default(now())
+  lastSeenAt     DateTime?
+  lastSyncAt     DateTime?
+  pluginVersion  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  nonces         ConnectorRequestNonce[]
+  snapshots      ConnectorDiagnosticSnapshot[]
+
+  @@map("website_connection")
+}
+
+model ConnectorRequestNonce {
+  id           String            @id @default(cuid())
+  connectionId String
+  connection   WebsiteConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  nonce        String
+  createdAt    DateTime          @default(now())
+
+  @@unique([connectionId, nonce])
+  @@index([connectionId, createdAt])
+  @@map("connector_request_nonce")
+}
+
+model ConnectorDiagnosticSnapshot {
+  id           String            @id @default(cuid())
+  connectionId String
+  connection   WebsiteConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  websiteId    String
+  website      Website           @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  schemaVersion Int
+  payload      Json
+  receivedAt   DateTime          @default(now())
+
+  @@index([connectionId, receivedAt])
+  @@map("connector_diagnostic_snapshot")
+}
+
+// Milestone 3 — Tool 01 Website Error Checker.
+// A Scan is one authenticated scan request and its persisted report.
+// Separate ScanFinding rows (not a JSON blob on Scan) so findings can be
+// filtered/listed by future reporting without parsing unstructured data.
+// Privacy: targetUrl/finalUrl are REDACTED (protocol + hostname + path only).
+// Never stored: query strings, fragments, credentials, DNS answers, internal
+// IPs, response bodies, cookies, or auth headers. The scanner itself sends
+// the query string as part of the HTTP request target (that is how the URL
+// is fetched) but strips it from everything logged or stored.
+model Scan {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetUrl         String
+  executionStatus   String
+  diagnosticOutcome String
+  httpStatus        Int?
+  durationMs        Int?
+  redirectCount     Int?
+  finalUrl          String?
+  errorCode         String?
+  startedAt         DateTime      @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  findings          ScanFinding[]
+  aiAnalysis        AiAnalysis?
+
+  @@index([userId, createdAt])
+  @@map("scan")
+}
+
+model ScanFinding {
+  id             String   @id @default(cuid())
+  scanId         String
+  scan           Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  title          String
+  description    String
+  severity       String
+  status         String
+  // Bounded structured evidence only: redacted chain hops (protocol, status,
+  // content type, byte count), error code, counts. Never raw bodies or IPs.
+  evidence       Json
+  recommendation String?
+  createdAt      DateTime @default(now())
+
+  @@index([scanId])
+  @@map("scan_finding")
+}
+
+// AI explanation for one scan (Milestone 4). One completed analysis per
+// scan (scanId unique); regeneration overwrites the row. The deterministic
+// Scan + ScanFinding rows are never modified by AI output. analysis holds
+// ONLY validated JSON (see lib/ai/validate.js); FAILED rows store a
+// sanitized errorCode and null analysis so the UI can offer a retry.
+model AiAnalysis {
+  id            String    @id @default(cuid())
+  scanId        String    @unique
+  scan          Scan      @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  status        String
+  provider      String
+  model         String?
+  schemaVersion String
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+
+  @@map("ai_analysis")
+}
+
+// Milestone 6 — Tool 02 Plugin & Theme Conflict Checker.
+// A ConflictDiagnostic stores a BOUNDED COPY of the snapshot payload it was
+// analysed against (snapshotPayload), never an FK to the live snapshot row:
+// the connector's latest-only model replaces that row on every sync.
+// Blocked snapshot runs (missing/invalid/unsupported/stale) persist NO row.
+// AI output lives only in ConflictAiAnalysis and never modifies the
+// deterministic diagnostic/finding rows. Symptom text is user-reported and
+// untrusted; errorExcerpt is server-side redacted for obvious secret
+// patterns before storage and is never logged.
+model ConflictDiagnostic {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId             String
+  website               Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  snapshotPayload       Json
+  snapshotSchemaVersion Int
+  snapshotReceivedAt    DateTime
+  symptomCategory       String // UPDATE_ERROR | FRONTEND_BROKEN | ADMIN_ERROR | EDITOR_FAILURE | FEATURE_NOT_WORKING | THEME_LAYOUT | PHP_COMPAT_WARNING | OTHER | UNKNOWN
+  symptomDescription    String
+  errorExcerpt          String?
+  status                String   @default("COMPLETED") // COMPLETED | BLOCKED_SNAPSHOT | FAILED
+  createdAt             DateTime @default(now())
+  completedAt           DateTime?
+  findings              ConflictFinding[]
+  aiAnalysis            ConflictAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("conflict_diagnostic")
+}
+
+model ConflictFinding {
+  id                        String   @id @default(cuid())
+  diagnosticId              String
+  diagnostic                ConflictDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  ruleId                    String
+  category                  String
+  severity                  String
+  status                    String // CONFIRMED_COMPATIBILITY | POTENTIAL | INSUFFICIENT_EVIDENCE
+  title                     String
+  description               String
+  evidence                  Json
+  referencedItems           Json
+  recommendation            String
+  confidence                String
+  requiredAdditionalEvidence String?
+  createdAt                 DateTime @default(now())
+
+  @@index([diagnosticId])
+  @@map("conflict_finding")
+}
+
+model ConflictAiAnalysis {
+  id            String   @id @default(cuid())
+  diagnosticId  String   @unique
+  diagnostic    ConflictDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String // COMPLETED | FAILED
+  provider      String
+  model         String?
+  schemaVersion String // "conflict-1"
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  completedAt   DateTime?
+
+  @@map("conflict_ai_analysis")
+}
+
+// Milestone 7 — Tool 03 WooCommerce Checkout & Payment Diagnostics.
+// Mirrors Tool 02: a WooCommerceDiagnostic stores a BOUNDED COPY of the
+// snapshot payload it was analysed against (snapshotPayload), never an FK
+// to the live latest-only snapshot row. Blocked snapshot runs persist NO
+// row. AI output lives only in WooCommerceAiAnalysis and never modifies
+// the deterministic diagnostic/finding rows. Symptom text is user-reported
+// and untrusted; errorExcerpt is server-side redacted before storage and
+// never logged. Never stored: payment secrets, card data, customer data,
+// order records, transaction data, connector credentials, gateway settings.
+model WooCommerceDiagnostic {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId             String
+  website               Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  snapshotPayload       Json
+  snapshotSchemaVersion Int
+  snapshotReceivedAt    DateTime
+  // NO_PAYMENT_METHODS | CHECKOUT_PAGE_MISSING | CHECKOUT_FAILS_TO_LOAD |
+  // CHECKOUT_STUCK_LOADING | PAYMENT_INIT_ERROR | PAYMENT_DECLINED_OR_FAILED |
+  // ORDER_PENDING | ORDER_NOT_CREATED | SHIPPING_OR_TAX | BLOCK_COMPAT_SUSPECTED |
+  // AFTER_UPDATE | OTHER | UNKNOWN
+  symptomCategory       String
+  symptomDescription    String
+  // User-reported only: BLOCK | CLASSIC | UNKNOWN
+  checkoutType          String   @default("UNKNOWN")
+  // User-reported only: ONE | MULTIPLE | UNKNOWN
+  affectedScope         String   @default("UNKNOWN")
+  // Free-text "when it started" (e.g. "after the 12 Oct update"), NOT a date.
+  startedAt             String?
+  errorExcerpt          String?
+  status                String   @default("COMPLETED") // COMPLETED | BLOCKED_SNAPSHOT | FAILED
+  createdAt             DateTime @default(now())
+  completedAt           DateTime?
+  findings              WooCommerceDiagnosticFinding[]
+  aiAnalysis            WooCommerceAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("woocommerce_diagnostic")
+}
+
+model WooCommerceDiagnosticFinding {
+  id                        String                @id @default(cuid())
+  diagnosticId              String
+  diagnostic                WooCommerceDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  ruleId                    String
+  category                  String
+  severity                  String
+  status                    String // CONFIRMED_COMPATIBILITY | POTENTIAL | INSUFFICIENT_EVIDENCE
+  title                     String
+  description               String
+  evidence                  Json
+  referencedItems           Json
+  recommendation            String
+  confidence                String
+  requiredAdditionalEvidence String?
+  createdAt                 DateTime @default(now())
+
+  @@index([diagnosticId])
+  @@map("woocommerce_diagnostic_finding")
+}
+
+model WooCommerceAiAnalysis {
+  id            String                @id @default(cuid())
+  diagnosticId  String                @unique
+  diagnostic    WooCommerceDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String // COMPLETED | FAILED
+  provider      String
+  model         String?
+  schemaVersion String // "woocommerce-1"
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  completedAt   DateTime?
+
+  @@map("woocommerce_ai_analysis")
+}
+
+// Milestone 8 — Tool 04 Elementor & Layout Checker.
+// Mirrors Tool 03: an ElementorDiagnostic stores a BOUNDED COPY of the
+// snapshot payload it was analysed against (snapshotPayload), never an FK
+// to the live latest-only snapshot row. Blocked snapshot runs persist NO
+// row. AI output lives only in ElementorAiAnalysis and never modifies the
+// deterministic diagnostic/finding rows. Symptom text is user-reported and
+// untrusted; errorExcerpt is server-side redacted before storage and never
+// logged. Never stored: HTML, logs, secrets, credentials, customer data,
+// screenshots, console output, or visual/rendering results — none are
+// collected in this milestone, so no finding ever claims visual verification.
+model ElementorDiagnostic {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId             String
+  website               Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  snapshotPayload       Json
+  snapshotSchemaVersion Int
+  snapshotReceivedAt    DateTime
+  // ELEMENTOR_EDITOR_NOT_LOADING | ELEMENTOR_EDITOR_WHITE_SCREEN |
+  // ELEMENTOR_EDITOR_GRAY_SCREEN | ELEMENTOR_EDITOR_STUCK_LOADING |
+  // ELEMENTOR_PREVIEW_NOT_LOADING | ELEMENTOR_WIDGET_PANEL_NOT_LOADING |
+  // ELEMENTOR_JAVASCRIPT_ERROR | ELEMENTOR_CSS_OR_ASSET_ISSUE |
+  // FRONTEND_LAYOUT_BROKEN | MOBILE_LAYOUT_ISSUE |
+  // ELEMENTOR_FREE_PRO_COMPATIBILITY | PHP_OR_ENVIRONMENT_REQUIREMENT |
+  // WORDPRESS_URL_CONFIGURATION | ISSUE_AFTER_UPDATE | OTHER_OR_UNKNOWN
+  symptomCategory       String
+  symptomDescription    String
+  // User-reported only: editor | frontend | both | unknown
+  affectedScope         String   @default("unknown")
+  // User-reported only: one | many | unknown
+  affectedPages         String   @default("unknown")
+  // User-reported only: mobile | desktop | both | unknown
+  deviceScope           String   @default("unknown")
+  // User-reported only, stored as text: TRUE | FALSE | UNKNOWN
+  updatePreceded        String   @default("UNKNOWN")
+  // Free-text "when it started" (e.g. "after the 12 Oct update"), NOT a date.
+  startedAt             String?
+  errorExcerpt          String?
+  status                String   @default("COMPLETED") // COMPLETED | BLOCKED_SNAPSHOT | FAILED
+  createdAt             DateTime @default(now())
+  completedAt           DateTime?
+  findings              ElementorDiagnosticFinding[]
+  aiAnalysis            ElementorAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("elementor_diagnostic")
+}
+
+model ElementorDiagnosticFinding {
+  id                        String              @id @default(cuid())
+  diagnosticId              String
+  diagnostic                ElementorDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  ruleId                    String
+  category                  String
+  severity                  String
+  status                    String // CONFIRMED_COMPATIBILITY | POTENTIAL | INSUFFICIENT_EVIDENCE
+  title                     String
+  description               String
+  evidence                  Json
+  referencedItems           Json
+  recommendation            String
+  confidence                String
+  requiredAdditionalEvidence String?
+  createdAt                 DateTime @default(now())
+
+  @@index([diagnosticId])
+  @@map("elementor_diagnostic_finding")
+}
+
+model ElementorAiAnalysis {
+  id            String              @id @default(cuid())
+  diagnosticId  String              @unique
+  diagnostic    ElementorDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String // COMPLETED | FAILED
+  provider      String
+  model         String?
+  schemaVersion String // "elementor-1"
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  completedAt   DateTime?
+
+  @@map("elementor_ai_analysis")
+}
+
+// Milestone 9 — Tool 05 Website Speed Analyzer.
+// A SpeedDiagnostic is a user-owned, immutable report of ONE synchronous
+// run: basic HTTP preflight (total response time, never TTFB) + optional
+// Lighthouse lab data + optional CrUX field data. Historical reports are
+// never updated on re-scan (a new row per run). Never stored: query
+// strings (always stripped for provider calls and storage), fragments,
+// API keys, credentials, cookies, raw provider responses, HTML, or bodies.
+// Statuses actually produced: COMPLETED | PARTIAL | FAILED | BLOCKED.
+// No QUEUED/RUNNING: no async mechanism exists in this milestone.
+// providerStatuses: psi/crux each NOT_CONFIGURED | NOT_ATTEMPTED | OK |
+// OK_ORIGIN_FALLBACK | NO_FIELD_DATA | QUOTA_EXCEEDED | TIMEOUT |
+// SERVER_ERROR | INVALID_RESPONSE | NETWORK_ERROR | OVERSIZED_RESPONSE |
+// FAILED, plus httpErrorCode when the preflight failed.
+model SpeedDiagnostic {
+  id                String                  @id @default(cuid())
+  userId            String
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestedTarget   String
+  providerTarget    String?
+  queryStripped     Boolean                 @default(true)
+  strategy          String
+  status            String
+  httpSummary       Json
+  lighthouseSummary Json?
+  cruxSummary       Json?
+  providerStatuses  Json
+  notices           Json                    @default("[]")
+  createdAt         DateTime                @default(now())
+  completedAt       DateTime?
+  findings          SpeedDiagnosticFinding[]
+  aiAnalysis        SpeedAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@map("speed_diagnostic")
+}
+
+model SpeedDiagnosticFinding {
+  id            String          @id @default(cuid())
+  diagnosticId  String
+  diagnostic    SpeedDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  ruleId        String
+  category      String
+  severity      String
+  source        String
+  sourceAuditId String?
+  sourceMetric  String?
+  title         String
+  description   String
+  evidence      Json
+  recommendation String
+  confidence    String
+  relatedMetric String?
+  createdAt     DateTime        @default(now())
+
+  @@index([diagnosticId])
+  @@map("speed_diagnostic_finding")
+}
+
+model SpeedAiAnalysis {
+  id            String          @id @default(cuid())
+  diagnosticId  String          @unique
+  diagnostic    SpeedDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String
+  provider      String
+  model         String?
+  schemaVersion String
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  completedAt   DateTime?
+
+  @@map("speed_ai_analysis")
+}
+
+// Milestone 10 — Tool 06 SSL & Redirect Checker.
+// A SslRedirectDiagnostic is a user-owned, immutable report of ONE
+// synchronous run: pinned, SSRF-safe redirect chain + genuine TLS
+// verification per https hop. Historical reports are never updated on
+// re-scan (a new row per run). Never stored: query strings, fragments,
+// API keys, credentials, cookies, raw responses/bodies, internal IPs,
+// or unverified certificate fields (issuer/dates only when verified).
+// Statuses actually produced: COMPLETED | PARTIAL | FAILED | BLOCKED.
+// No QUEUED/RUNNING: no async mechanism exists in this milestone.
+model SslRedirectDiagnostic {
+  id                 String               @id @default(cuid())
+  userId             String
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId          String?
+  website            Website?             @relation(fields: [websiteId], references: [id], onDelete: SetNull)
+  sanitizedTargetUrl String
+  executionStatus    String
+  summary            Json
+  tlsOutcome         Json?
+  redirectChain      Json
+  limitations        Json                 @default("[]")
+  startedAt          DateTime             @default(now())
+  completedAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  findings           SslRedirectFinding[]
+  aiAnalysis         SslRedirectAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("ssl_redirect_diagnostic")
+}
+
+model SslRedirectFinding {
+  id            String                @id @default(cuid())
+  diagnosticId  String
+  diagnostic    SslRedirectDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  code          String
+  severity      String
+  title         String
+  explanation   String
+  evidence      Json
+  recommendation String
+  confidence    String
+  limitations   String?
+  createdAt     DateTime              @default(now())
+
+  @@index([diagnosticId])
+  @@map("ssl_redirect_finding")
+}
+
+model SslRedirectAiAnalysis {
+  id            String                @id @default(cuid())
+  diagnosticId  String                @unique
+  diagnostic    SslRedirectDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String
+  provider      String
+  model         String?
+  schemaVersion String
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  completedAt   DateTime?
+
+  @@map("ssl_redirect_ai_analysis")
+}
+
+// Milestone 11 — Tool 07 Contact Form & Email Checker.
+// A ContactEmailDiagnostic is a user-owned, immutable report of ONE
+// synchronous run: snapshot interpretation (bounded copy only) + public
+// email-domain DNS observations. Historical reports are never updated on
+// re-scan (a new row per run). Never stored: secrets, credentials, full
+// email addresses, recipients, form submissions, message bodies, raw
+// config, or arbitrary option contents. DNS observations hold public TXT
+// excerpts (capped) only. Statuses actually produced: COMPLETED | PARTIAL
+// | FAILED. No QUEUED/RUNNING: no async mechanism exists. Stale-snapshot
+// runs are BLOCKED at the service layer (422) and persist NO row, so no
+// BLOCKED row exists in this table — mirroring Tools 02–04/06.
+model ContactEmailDiagnostic {
+  id                    String               @id @default(cuid())
+  userId                String
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId             String?
+  website               Website?             @relation(fields: [websiteId], references: [id], onDelete: SetNull)
+  sanitizedTargetUrl    String
+  sanitizedEmailDomain  String?
+  dkimSelector          String?
+  executionStatus       String
+  snapshotSchemaVersion Int?
+  snapshotReceivedAt    DateTime?
+  snapshotFreshness     String
+  snapshotCopy          Json                 @default("{}")
+  spfObservation        Json                 @default("{}")
+  dmarcObservation      Json                 @default("{}")
+  dkimObservation       Json                 @default("{}")
+  summary               Json
+  startedAt             DateTime             @default(now())
+  completedAt           DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  findings              ContactEmailFinding[]
+  aiAnalysis            ContactEmailAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("contact_email_diagnostic")
+}
+
+model ContactEmailFinding {
+  id             String                 @id @default(cuid())
+  diagnosticId   String
+  diagnostic     ContactEmailDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  code           String
+  severity       String
+  title          String
+  explanation    String
+  evidence       Json
+  recommendation String
+  confidence     String
+  evidenceStatus String?
+  limitations    String?
+  createdAt      DateTime               @default(now())
+
+  @@index([diagnosticId])
+  @@map("contact_email_finding")
+}
+
+model ContactEmailAiAnalysis {
+  id            String                 @id @default(cuid())
+  diagnosticId  String                 @unique
+  diagnostic    ContactEmailDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String
+  provider      String
+  model         String?
+  schemaVersion String
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  completedAt   DateTime?
+
+  @@map("contact_email_ai_analysis")
+}
+
+// Tool 08 (Milestone 12): Security & Vulnerability Scanner. Mirrors Tools
+// 02-07 diagnostic shapes. Never stores response bodies, secrets,
+// credentials, config files, or user data — only sanitized classifications,
+// minimal advisory references (uuid/title/range/fixed version only where
+// the provider supplies or derives them, source links, retrieval time),
+// and bounded component summaries. Historical reports are immutable:
+// re-scans create new rows.
+model SecurityDiagnostic {
+  id                       String                    @id @default(cuid())
+  userId                   String
+  user                     User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId                String?
+  website                  Website?                  @relation(fields: [websiteId], references: [id], onDelete: SetNull)
+  sanitizedWebsiteUrl      String
+  executionStatus          String
+  snapshotSchemaVersion    Int?
+  snapshotReceivedAt       DateTime?
+  snapshotFreshness        String
+  componentInventorySummary Json                     @default("{}")
+  advisoryMatchSummary     Json                     @default("{}")
+  providerStatuses         Json                     @default("[]")
+  httpObservations         Json                     @default("{}")
+  summary                  Json
+  limitations              Json                     @default("[]")
+  startedAt                DateTime                  @default(now())
+  completedAt              DateTime?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  findings                 SecurityDiagnosticFinding[]
+  aiAnalysis               SecurityAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("security_diagnostic")
+}
+
+model SecurityDiagnosticFinding {
+  id             String             @id @default(cuid())
+  diagnosticId   String
+  diagnostic     SecurityDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  code           String
+  severity       String
+  title          String
+  explanation    String
+  evidence       Json
+  recommendation String
+  confidence     String
+  evidenceStatus String?
+  limitations    String?
+  advisoryId     String?
+  cveId          String?
+  sourceUrl      String?
+  fixedVersion   String?
+  retrievedAt    DateTime?
+  createdAt      DateTime             @default(now())
+
+  @@index([diagnosticId])
+  @@map("security_diagnostic_finding")
+}
+
+model SecurityAiAnalysis {
+  id            String             @id @default(cuid())
+  diagnosticId  String             @unique
+  diagnostic    SecurityDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String
+  provider      String
+  model         String?
+  schemaVersion String
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  completedAt   DateTime?
+
+  @@map("security_ai_analysis")
+}
+
+model MalwareDiagnostic {
+  id                       String                    @id @default(cuid())
+  userId                   String
+  user                     User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId                String?
+  website                  Website?                  @relation(fields: [websiteId], references: [id], onDelete: SetNull)
+  sanitizedWebsiteUrl      String
+  executionStatus          String
+  scanTimestamp            DateTime?
+  snapshotSchemaVersion    Int?
+  snapshotReceivedAt       DateTime?
+  snapshotFreshness        String
+  integritySummary         Json                     @default("{}")
+  coverageSummary          Json                     @default("{}")
+  checksumSourceMetadata   Json                     @default("{}")
+  recoveryRecommendations  Json                     @default("{}")
+  summary                  Json
+  limitations              Json                     @default("[]")
+  startedAt                DateTime                  @default(now())
+  completedAt              DateTime?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  findings                 MalwareDiagnosticFinding[]
+  aiAnalysis               MalwareAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("malware_diagnostic")
+}
+
+model MalwareDiagnosticFinding {
+  id               String             @id @default(cuid())
+  diagnosticId     String
+  diagnostic       MalwareDiagnostic  @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  code             String
+  severity         String
+  title            String
+  explanation      String
+  evidence         Json
+  recommendation   String
+  confidence       String
+  evidenceStatus   String?
+  limitations      String?
+  relativePath     String?
+  componentId      String?
+  installedVersion String?
+  referenceVersion String?
+  ruleId           String?
+  checksumId       String?
+  evidenceCategory String?
+  createdAt        DateTime           @default(now())
+
+  @@index([diagnosticId])
+  @@map("malware_diagnostic_finding")
+}
+
+model MalwareAiAnalysis {
+  id            String            @id @default(cuid())
+  diagnosticId  String            @unique
+  diagnostic    MalwareDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String
+  provider      String
+  model         String?
+  schemaVersion String
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  completedAt   DateTime?
+
+  @@map("malware_ai_analysis")
+}
+
+// Tool 11 (Milestone 15): SEO Spam & Indexing Checker. Mirrors Tools
+// 02-10 diagnostic shapes. A SeoDiagnostic is a user-owned, immutable
+// report of ONE synchronous run: pinned passive homepage/robots/sitemap
+// checks + snapshot SEO-plugin evidence (websiteId path only). Historical
+// reports are never updated on re-scan (a new row per run). Never stored:
+// HTML bodies, matched snippets, secrets, credentials, absolute paths,
+// query strings, fragments, or internal IPs. Stale-snapshot runs are
+// BLOCKED at the service layer (422) and persist NO row. Search Console
+// is NOT_CONFIGURED: no Search Console data is ever consulted or stored,
+// so no finding ever claims indexed/deindexed status.
+model SeoDiagnostic {
+  id                    String               @id @default(cuid())
+  userId                String
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId             String?
+  website               Website?             @relation(fields: [websiteId], references: [id], onDelete: SetNull)
+  sanitizedWebsiteUrl   String
+  requestedTarget       String
+  finalUrl              String?
+  executionStatus       String
+  snapshotSchemaVersion Int?
+  snapshotReceivedAt    DateTime?
+  snapshotFreshness     String
+  homepageSummary       Json                 @default("{}")
+  robotsSummary         Json                 @default("{}")
+  sitemapSummary        Json                 @default("{}")
+  spamSignals           Json                 @default("{}")
+  seoPluginSummary      Json                 @default("{}")
+  advisoryContext       Json                 @default("{}")
+  searchConsoleStatus   String               @default("NOT_CONFIGURED")
+  summary               Json
+  limitations           Json                 @default("[]")
+  startedAt             DateTime             @default(now())
+  completedAt           DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  findings              SeoDiagnosticFinding[]
+  aiAnalysis            SeoAiAnalysis?
+
+  @@index([userId, createdAt])
+  @@index([websiteId])
+  @@map("seo_diagnostic")
+}
+
+model SeoDiagnosticFinding {
+  id             String        @id @default(cuid())
+  diagnosticId   String
+  diagnostic     SeoDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  code           String
+  severity       String
+  title          String
+  explanation    String
+  evidence       Json
+  recommendation String
+  confidence     String
+  evidenceStatus String?
+  limitations    String?
+  checkId        String?
+  evidenceCategory String?
+  createdAt      DateTime      @default(now())
+
+  @@index([diagnosticId])
+  @@map("seo_diagnostic_finding")
+}
+
+model SeoAiAnalysis {
+  id            String        @id @default(cuid())
+  diagnosticId  String        @unique
+  diagnostic    SeoDiagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  status        String
+  provider      String
+  model         String?
+  schemaVersion String
+  analysis      Json?
+  errorCode     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  completedAt   DateTime?
+
+  @@map("seo_ai_analysis")
+}
+
+// Tool 10 (Milestone 14): Backup, Restore & Migration Assistant.
+// Archive CONTENTS are never stored here: BackupArtifact holds only the
+// bounded manifest, counts, sizes, hashes, and encryption key identifier.
+// The encrypted archive bytes live in private storage (local adapter in
+// dev/test; no production adapter configured). The SaaS PostgreSQL
+// database is NEVER a WordPress restore target: restore/migration
+// targets are Website rows (a registered WordPress site), and no code
+// path in lib/backup/ opens the SaaS database as a WP target.
+model BackupArtifact {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceWebsiteId    String?
+  sourceWebsite      Website? @relation("BackupArtifactSource", fields: [sourceWebsiteId], references: [id], onDelete: SetNull)
+  mode               String
+  status             String   @default("UNVERIFIED") // UNVERIFIED | VERIFIED | FAILED | TAMPERED | DELETED
+  manifest           Json
+  storageId          String
+  storageDriver      String   @default("local")
+  encryptionScheme   String   @default("AES-256-GCM")
+  encryptionKeyId    String?
+  archiveBytes       Int?
+  archiveSha256      String?
+  tableCount         Int      @default(0)
+  fileCount          Int      @default(0)
+  verificationStatus String   @default("UNVERIFIED")
+  verifiedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  operations         BackupOperation[]
+  downloadTokens     BackupDownloadToken[]
+
+  @@index([userId, createdAt])
+  @@map("backup_artifact")
+}
+
+model BackupOperation {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type                  String // BACKUP | RESTORE | MIGRATION
+  state                 String   @default("DRAFT")
+  mode                  String?
+  sourceWebsiteId       String?
+  sourceWebsite         Website? @relation("BackupOperationSource", fields: [sourceWebsiteId], references: [id], onDelete: SetNull)
+  destinationWebsiteId  String?
+  destinationWebsite    Website? @relation("BackupOperationDestination", fields: [destinationWebsiteId], references: [id], onDelete: SetNull)
+  backupArtifactId      String?
+  backupArtifact        BackupArtifact? @relation(fields: [backupArtifactId], references: [id], onDelete: SetNull)
+  rollbackBackupId      String?
+  plan                  Json     @default("{}")
+  planHash              String?
+  confirmationTokenHash String?
+  confirmationExpiresAt DateTime?
+  confirmationUsedAt    DateTime?
+  preflight             Json     @default("{}")
+  errorCode             String?
+  verification          Json     @default("{}")
+  fileCount             Int?
+  tableCount            Int?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  events                BackupOperationEvent[]
+
+  @@index([userId, createdAt])
+  @@index([destinationWebsiteId, state])
+  @@map("backup_operation")
+}
+
+model BackupOperationEvent {
+  id          String          @id @default(cuid())
+  operationId String
+  operation   BackupOperation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  state       String
+  note        String
+  createdAt   DateTime        @default(now())
+
+  @@index([operationId, createdAt])
+  @@map("backup_operation_event")
+}
+
+model BackupDownloadToken {
+  id         String         @id @default(cuid())
+  artifactId String
+  artifact   BackupArtifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@index([artifactId])
+  @@map("backup_download_token")
+}
+
+// Tool 12 (Milestone 16): Uptime & Maintenance Monitor.
+// Monitors bind ONLY to owned registered Website rows; no arbitrary URL
+// is ever stored as a target. Target identity is a redacted fingerprint
+// (protocol + host + port + path, no query, no credentials). Never
+// stored: response bodies, HTML snippets, cookies, auth headers,
+// internal IPs, full query strings, or provider secrets.
+model WebsiteMonitor {
+  id                       String   @id @default(cuid())
+  userId                   String
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteId                String
+  website                  Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  targetHost               String
+  targetUrl                String
+  targetFingerprint        String
+  targetConfirmed          Boolean  @default(true)
+  targetConfirmedAt        DateTime @default(now())
+  status                   String   @default("ENABLED") // ENABLED | PAUSED
+  checkIntervalMinutes     Int      @default(15)
+  warningLatencyMs         Int      @default(1000)
+  highLatencyMs            Int      @default(3000)
+  failureThreshold         Int      @default(2)
+  recoveryThreshold        Int      @default(2)
+  maintenanceDetectionEnabled Boolean @default(true)
+  notifyInApp              Boolean  @default(true)
+  notifyEmail              Boolean  @default(false)
+  currentState             String   @default("UNKNOWN") // HEALTHY | SUSPECTED_FAILURE | DOWN | RECOVERING | MAINTENANCE | UNKNOWN | PAUSED | BLOCKED
+  consecutiveFailures      Int      @default(0)
+  consecutiveSuccesses     Int      @default(0)
+  firstFailureAt           DateTime?
+  lastCheckAt              DateTime?
+  lastSuccessAt            DateTime?
+  nextCheckAt              DateTime @default(now())
+  leaseOwner               String?
+  leaseExpiresAt           DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  checks                   MonitorCheck[]
+  incidents                MonitorIncident[]
+  windows                  MaintenanceWindow[]
+  notifications            MonitorNotification[]
+
+  @@index([userId, createdAt])
+  @@index([status, nextCheckAt])
+  @@map("website_monitor")
+}
+
+model MonitorCheck {
+  id                String   @id @default(cuid())
+  monitorId         String
+  monitor           WebsiteMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  scheduledAt       DateTime?
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  outcome           String   // UP | DEGRADED | FAILURE | MAINTENANCE_OBSERVED | BLOCKED | UNKNOWN | STALE
+  failureReason     String?  // DNS | TLS | CONNECTION | TIMEOUT | HTTP_5XX | null
+  httpStatus        Int?
+  latencyMs         Int?
+  latencyWarning    Boolean  @default(false)
+  finalUrl          String?
+  redirectCount     Int      @default(0)
+  crossHostRedirectBlocked Boolean @default(false)
+  maintenanceIndicator String @default("NOT_OBSERVED") // OBSERVED | NOT_OBSERVED | INSUFFICIENT_EVIDENCE
+  monitoringGap     Boolean  @default(false)
+  triggeredBy       String   @default("SCHEDULED") // SCHEDULED | MANUAL
+  workerId          String?
+  errorCode         String?
+  createdAt         DateTime @default(now())
+
+  @@index([monitorId, createdAt])
+  @@map("monitor_check")
+}
+
+model MonitorIncident {
+  id               String   @id @default(cuid())
+  monitorId        String
+  monitor          WebsiteMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  type             String   @default("DOWN")
+  severity         String   @default("HIGH")
+  status           String   @default("OPEN") // OPEN | RECOVERED
+  firstFailureAt   DateTime
+  confirmedAt      DateTime
+  recoveredAt      DateTime?
+  lastFailureAt    DateTime
+  failureCount     Int      @default(0)
+  successCount     Int      @default(0)
+  failureReason    String?
+  escalationSent   Boolean  @default(false)
+  acknowledgedAt   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  notifications    MonitorNotification[]
+
+  @@index([monitorId, status, createdAt])
+  @@map("monitor_incident")
+}
+
+model MaintenanceWindow {
+  id            String   @id @default(cuid())
+  monitorId     String
+  monitor       WebsiteMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  startAt       DateTime
+  endAt         DateTime
+  timezone      String
+  suppressAlerts Boolean @default(true)
+  pauseChecks   Boolean  @default(false)
+  status        String   @default("ACTIVE") // ACTIVE | CANCELLED | COMPLETED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([monitorId, startAt])
+  @@index([userId, startAt])
+  @@map("maintenance_window")
+}
+
+model MonitorNotification {
+  id            String   @id @default(cuid())
+  monitorId     String
+  monitor       WebsiteMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  incidentId    String?
+  incident      MonitorIncident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  windowId      String?
+  type          String
+  channel       String   @default("IN_APP")
+  status        String   @default("CREATED") // CREATED | SUPPRESSED | READ | DISMISSED
+  dedupKey      String   @unique
+  title         String
+  body          String
+  emailStatus   String?
+  acknowledgedAt DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([monitorId, createdAt])
+  @@map("monitor_notification")
+}
+
+model MonitoringSchedulerState {
+  id            String   @id @default("scheduler")
+  lastTickAt    DateTime?
+  lastTickSummary Json @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("monitoring_scheduler_state")
+}

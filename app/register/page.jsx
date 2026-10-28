@@ -1,0 +1,23 @@
+import Container from "../../components/Container";
+import RegisterForm from "../../components/RegisterForm";
+import { getCurrentUser } from "../../lib/session";
+import { redirect } from "next/navigation";
+
+export default async function RegisterPage() {
+  const user = await getCurrentUser();
+  if (user) redirect("/dashboard");
+  return (
+    <Container>
+      <main className="py-12">
+        <h1 className="text-3xl font-bold">Create your account</h1>
+        <p className="mt-2 text-slate-600">
+          Already have an account?{" "}
+          <a className="font-medium text-blue-700 underline" href="/login">Sign in</a>.
+        </p>
+        <div className="mt-8 max-w-md rounded-xl border border-slate-200 bg-white p-6">
+          <RegisterForm />
+        </div>
+      </main>
+    </Container>
+  );
+}

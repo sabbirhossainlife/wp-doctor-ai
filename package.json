@@ -1,0 +1,34 @@
+{
+  "dependencies": {
+    "@prisma/client": "^6.14.0",
+    "better-auth": "^1.7.14",
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "description": "WP Doctor AI \u2014 AI-powered WordPress troubleshooting & expert repair SaaS (Milestone 0 foundation only)",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.5.0",
+    "prisma": "^6.14.0",
+    "tailwindcss": "^4.1.0"
+  },
+  "name": "wp-doctor-ai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "eslint .",
+    "start": "next start",
+    "test": "node --test tests/url.test.js tests/health.test.js tests/websites.test.js tests/classify.test.js tests/scanner-url.test.js tests/scanner-ip.test.js tests/scanner-dns.test.js tests/scanner-pinning.test.js tests/scanner-redirect.test.js tests/scanner-limits.test.js tests/scanner-transport.test.js tests/scanner-rate-limit.test.js tests/ai-schema.test.js tests/ai-input.test.js tests/ai-providers.test.js tests/ai-validate.test.js tests/conflict-rules.test.js tests/conflict-ai-validate.test.js tests/woocommerce-rules.test.js tests/woocommerce-ai-validate.test.js tests/elementor-rules.test.js tests/elementor-invariants.test.js tests/elementor-ai-validate.test.js tests/speed-thresholds.test.js tests/speed-providers.test.js tests/speed-rules.test.js tests/speed-ai-validate.test.js tests/ssl-tls.test.js tests/ssl-engine.test.js tests/ssl-ai-validate.test.js tests/ssl-integration.test.js tests/contact-email-rules.test.js tests/contact-email-validator.test.js tests/contact-email-ai-validate.test.js tests/security-versions.test.js tests/security-provider.test.js tests/security-rules.test.js tests/security-http.test.js tests/security-validator.test.js tests/security-ai-validate.test.js tests/malware-rules.test.js tests/malware-ai-validate.test.js tests/malware-no-side-effects.test.js tests/backup-core.test.js tests/seo-parse.test.js tests/seo-rules.test.js tests/seo-http.test.js tests/seo-ai-validate.test.js tests/seo-no-side-effects.test.js tests/uptime-classify.test.js tests/uptime-maintenance.test.js tests/uptime-availability.test.js tests/uptime-http.test.js tests/uptime-scheduler.test.js tests/readiness.test.js",
+    "test:db": "node scripts/run-db-tests.mjs",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e.test.js tests/e2e-scans.test.js tests/ai-e2e.test.js tests/e2e-conflict.test.js tests/e2e-woocommerce.test.js tests/e2e-elementor.test.js tests/e2e-speed.test.js tests/e2e-ssl.test.js tests/e2e-contact-email.test.js tests/e2e-security.test.js tests/e2e-malware.test.js tests/e2e-seo.test.js tests/e2e-uptime.test.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:validate": "prisma validate",
+    "test:scanner": "node --test tests/scanner-url.test.js tests/scanner-ip.test.js tests/scanner-dns.test.js tests/scanner-pinning.test.js tests/scanner-redirect.test.js tests/scanner-limits.test.js tests/scanner-transport.test.js tests/scanner-rate-limit.test.js"
+  },
+  "version": "0.1.0"
+}

@@ -1,4 +1,4 @@
-import Container from "../../components/Container";
+import PageContainer from "../../components/PageContainer";
 import RegisterForm from "../../components/RegisterForm";
 import { getCurrentUser } from "../../lib/session";
 import { redirect } from "next/navigation";
@@ -7,7 +7,7 @@ export default async function RegisterPage() {
   const user = await getCurrentUser();
   if (user) redirect("/dashboard");
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">Create your account</h1>
         <p className="mt-2 text-slate-600">
@@ -18,6 +18,6 @@ export default async function RegisterPage() {
           <RegisterForm />
         </div>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

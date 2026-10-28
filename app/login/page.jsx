@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import Container from "../../components/Container";
+import PageContainer from "../../components/PageContainer";
 import LoginForm from "../../components/LoginForm";
 import { getCurrentUser } from "../../lib/session";
 import { redirect } from "next/navigation";
@@ -8,7 +8,7 @@ export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) redirect("/dashboard");
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">Sign in</h1>
         <p className="mt-2 text-slate-600">
@@ -21,6 +21,6 @@ export default async function LoginPage() {
           </Suspense>
         </div>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

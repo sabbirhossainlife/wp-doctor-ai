@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import ScanForm from "../../../components/ScanForm";
 import { getCurrentUser } from "../../../lib/session";
 
@@ -7,15 +8,16 @@ export default async function ErrorCheckerPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Website Error Checker</h1>
+        <PageHeader title="Website Error Checker" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Enter a public website URL. The checker runs a bounded, secure HTTP
           diagnostic — availability, HTTP status, redirects, and connection
           problems — and saves an evidence-based report you can review later.
           It does not diagnose private WordPress internals from a public URL.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <ScanForm />
         </div>
@@ -37,6 +39,6 @@ export default async function ErrorCheckerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

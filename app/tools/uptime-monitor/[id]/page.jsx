@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import UptimeMonitorActions from "../../../../components/UptimeMonitorActions";
 import MaintenanceWindowForm from "../../../../components/MaintenanceWindowForm";
 import { getCurrentUser } from "../../../../lib/session";
@@ -34,7 +34,7 @@ export default async function UptimeMonitorDetailPage({ params }) {
   const activeWindows = windows.filter((w) => w.status === "ACTIVE" && new Date(w.startAt).getTime() <= now && now < new Date(w.endAt).getTime());
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <a className="text-sm font-medium text-blue-700 underline" href="/tools/uptime-monitor">← All monitors</a>
         <h1 className="mt-4 text-3xl font-bold">{monitor.targetUrl}</h1>
@@ -152,6 +152,6 @@ export default async function UptimeMonitorDetailPage({ params }) {
           )}
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

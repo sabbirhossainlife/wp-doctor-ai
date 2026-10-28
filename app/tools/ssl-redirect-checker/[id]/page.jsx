@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import SslRedirectAiSection from "../../../../components/SslRedirectAiSection";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
@@ -21,7 +21,7 @@ export default async function SslDetailPage({ params }) {
   const limitations = Array.isArray(diagnostic.limitations) ? diagnostic.limitations : [];
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">SSL report</h1>
         <p className="mt-2 text-slate-600">
@@ -123,6 +123,6 @@ export default async function SslDetailPage({ params }) {
           <a className="font-medium text-blue-700 underline" href="/tools/ssl-redirect-checker/history">Back to SSL history</a>
         </p>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
 import { SCAN_LIMITATION_NOTE } from "../../../../lib/diagnostics/classify";
@@ -32,7 +32,7 @@ export default async function ScanReportPage({ params }) {
   const aiConfigured = isAiConfigured(getAiConfig());
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">Scan report</h1>
         <dl className="mt-6 space-y-2 text-sm text-slate-700">
@@ -85,6 +85,6 @@ export default async function ScanReportPage({ params }) {
           <a className="font-medium text-blue-700 underline" href="/tools/error-checker/history">Back to scan history</a>
         </p>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

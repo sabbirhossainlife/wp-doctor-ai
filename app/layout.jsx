@@ -1,5 +1,6 @@
 import "./globals.css";
 import SiteHeader from "../components/SiteHeader";
+import PageFooter from "../components/PageFooter";
 
 export const metadata = {
   title: "WP Doctor AI — WordPress Troubleshooting & Expert Repair",
@@ -10,9 +11,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body className="flex min-h-screen min-w-0 flex-col">
         <SiteHeader />
-        {children}
+        <div className="min-w-0 flex-1">{children}</div>
+        <PageFooter />
       </body>
     </html>
   );

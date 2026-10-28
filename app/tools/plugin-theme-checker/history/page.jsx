@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
 
@@ -29,7 +29,7 @@ export default async function ConflictHistoryPage({ searchParams }) {
   if (page > totalPages) page = totalPages;
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">Conflict check history</h1>
         <p className="mt-2 text-slate-600">Real conflict reports belonging to your account only.</p>
@@ -58,6 +58,6 @@ export default async function ConflictHistoryPage({ searchParams }) {
           </ul>
         )}
       </main>
-    </Container>
+    </PageContainer>
   );
 }

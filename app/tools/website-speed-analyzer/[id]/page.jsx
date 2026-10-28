@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import SpeedAiSection from "../../../../components/SpeedAiSection";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
@@ -29,7 +29,7 @@ export default async function SpeedDetailPage({ params }) {
   const notices = Array.isArray(diagnostic.notices) ? diagnostic.notices : [];
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">Speed report</h1>
         <p className="mt-2 text-slate-600">
@@ -115,6 +115,6 @@ export default async function SpeedDetailPage({ params }) {
 
         <SpeedAiSection diagnosticId={diagnostic.id} initial={publicSpeedAnalysis(diagnostic.aiAnalysis)} />
       </main>
-    </Container>
+    </PageContainer>
   );
 }

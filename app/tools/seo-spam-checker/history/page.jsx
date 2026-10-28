@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
 
@@ -22,7 +22,7 @@ export default async function SeoHistoryPage({ searchParams }) {
   ]);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">SEO diagnostic history</h1>
         <p className="mt-2 text-slate-600">{total} report(s). Reports are immutable; re-scans create new reports. This tool never modifies a site, and no report means a site is SEO-clean, fully indexed, or spam-free.</p>
@@ -50,6 +50,6 @@ export default async function SeoHistoryPage({ searchParams }) {
           {page < totalPages ? <a className="font-medium text-blue-700 underline" href={`/tools/seo-spam-checker/history?page=${page + 1}`}>Next page</a> : null}
         </nav>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

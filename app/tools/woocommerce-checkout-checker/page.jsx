@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import WooCommerceCheckerForm from "../../../components/WooCommerceCheckerForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -28,15 +29,16 @@ export default async function WooCommerceCheckerPage() {
     };
   });
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">WooCommerce Checkout &amp; Payment Checker</h1>
+        <PageHeader title="WooCommerce Checkout & Payment Checker" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Checks the last diagnostic snapshot your WordPress connector sent
           for WooCommerce presence, checkout page configuration, and payment
           gateway setup — deterministically, with no guessing. The live site
           is not modified, no order is inspected, and no payment is ever run.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <WooCommerceCheckerForm websites={view} />
         </div>
@@ -62,6 +64,6 @@ export default async function WooCommerceCheckerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

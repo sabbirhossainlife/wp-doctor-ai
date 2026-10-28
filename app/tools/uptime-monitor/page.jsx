@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import UptimeMonitorForm from "../../../components/UptimeMonitorForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -35,9 +36,9 @@ export default async function UptimeMonitorPage() {
   const schedulerActive = Boolean(health?.lastTickAt) && Date.now() - new Date(health.lastTickAt).getTime() < 2 * 60 * 60 * 1000;
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Uptime &amp; Maintenance Monitor</h1>
+        <PageHeader title="Uptime & Maintenance Monitor" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Authenticated, single-location monitoring for your registered websites only. A check is one
           observed result from this monitoring location — never proof a site is down worldwide, never
@@ -65,6 +66,7 @@ export default async function UptimeMonitorPage() {
             No multi-region observation is implemented — every result is from this single location.
           </p>
         </section>
+        </PageHeader>
         <section className="mt-6 grid gap-4 sm:grid-cols-4" aria-label="Monitor overview">
           <div className="rounded-xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">Total monitors</p><p className="mt-1 text-2xl font-bold">{monitors.length} <span className="text-sm font-normal text-slate-500">/ 20 per account</span></p></div>
           <div className="rounded-xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">Healthy</p><p className="mt-1 text-2xl font-bold">{counts.HEALTHY ?? 0}</p></div>
@@ -117,6 +119,6 @@ export default async function UptimeMonitorPage() {
           </ul>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

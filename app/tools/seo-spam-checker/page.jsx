@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import SeoCheckerForm from "../../../components/SeoCheckerForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -13,9 +14,9 @@ export default async function SeoSpamCheckerPage() {
     take: 100,
   });
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">SEO Spam &amp; Indexing Checker</h1>
+        <PageHeader title="SEO Spam & Indexing Checker" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Read-only, evidence-based SEO signals for a homepage: title and meta tags, robots.txt rules,
           sitemap contents, redirect behaviour, and conservative spam indicators for human review.
@@ -32,6 +33,7 @@ export default async function SeoSpamCheckerPage() {
           manually in Google Search Console. This tool never modifies robots.txt, metadata, redirects,
           settings, or site content.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <SeoCheckerForm websites={websites.map((w) => ({ id: w.id, name: w.name, normalizedUrl: w.normalizedUrl }))} />
         </div>
@@ -51,6 +53,6 @@ export default async function SeoSpamCheckerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
 
@@ -11,7 +11,7 @@ export default async function BackupDetailPage({ params }) {
   if (!artifact) redirect("/tools/backup-restore-migration");
   const manifest = artifact.manifest ?? {};
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">Backup detail</h1>
         <p className="mt-3 text-slate-600">Backup contents are never displayed here — only the manifest summary, counts, sizes, and integrity status.</p>
@@ -36,6 +36,6 @@ export default async function BackupDetailPage({ params }) {
           <p className="mt-3 text-sm text-slate-600"><a className="font-medium text-blue-700 underline" href="/tools/backup-restore-migration">Back to Backup, Restore &amp; Migration</a></p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

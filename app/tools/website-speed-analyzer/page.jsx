@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import SpeedAnalyzerForm from "../../../components/SpeedAnalyzerForm";
 import { getCurrentUser } from "../../../lib/session";
 
@@ -7,9 +8,9 @@ export default async function SpeedAnalyzerPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Website Speed Analyzer</h1>
+        <PageHeader title="Website Speed Analyzer" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Diagnoses one page from three separate sources, kept separate on purpose:
           a basic HTTP preflight (status, redirects, total response time), a Google
@@ -19,6 +20,7 @@ export default async function SpeedAnalyzerPage() {
           and the Lighthouse score is a lab score — never a Google ranking score.
           Nothing on the analysed site is changed: this tool diagnoses only.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <SpeedAnalyzerForm />
         </div>
@@ -37,6 +39,6 @@ export default async function SpeedAnalyzerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

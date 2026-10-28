@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import { BackupCreateForm, RestoreCreateForm, MigrationCreateForm } from "../../../components/BackupToolForms";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -16,15 +17,16 @@ export default async function BackupRestoreMigrationPage() {
   const simple = (list) => list.map((w) => ({ id: w.id, name: w.name, normalizedUrl: w.normalizedUrl }));
   const simpleArtifacts = artifacts.map((a) => ({ id: a.id, mode: a.mode, status: a.status }));
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Backup, Restore &amp; Migration Assistant</h1>
+        <PageHeader title="Backup, Restore & Migration Assistant" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Authenticated, user-controlled, verified — never fake success. Backups are site-data backups
           (database and/or supported files), not complete hosting/server images. Backup contents are
           never shown in this dashboard. The SaaS database is never a restore target: restores and
           migrations target only registered WordPress sites you own.
         </p>
+        </PageHeader>
         <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6" aria-labelledby="bk-status-heading">
           <h2 id="bk-status-heading" className="text-lg font-semibold">Storage &amp; encryption readiness</h2>
           <p className="mt-2 text-sm text-slate-600">
@@ -89,6 +91,6 @@ export default async function BackupRestoreMigrationPage() {
           </ul>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

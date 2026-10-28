@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import SslRedirectCheckerForm from "../../../components/SslRedirectCheckerForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -13,9 +14,9 @@ export default async function SslRedirectCheckerPage() {
     take: 100,
   });
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">SSL &amp; Redirect Checker</h1>
+        <PageHeader title="SSL & Redirect Checker" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Diagnoses one site&apos;s TLS certificate and redirect chain, separately and
           honestly: the certificate is verified for real (hostname, validity period,
@@ -25,6 +26,7 @@ export default async function SslRedirectCheckerPage() {
           reported neutrally — it is not, on its own, evidence of anything
           malicious. Nothing on the analysed site is changed: this tool diagnoses only.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <SslRedirectCheckerForm websites={websites.map((w) => ({ id: w.id, name: w.name, normalizedUrl: w.normalizedUrl }))} />
         </div>
@@ -43,6 +45,6 @@ export default async function SslRedirectCheckerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

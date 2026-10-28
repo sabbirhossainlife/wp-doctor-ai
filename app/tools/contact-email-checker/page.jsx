@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import ContactEmailCheckerForm from "../../../components/ContactEmailCheckerForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -13,9 +14,9 @@ export default async function ContactEmailCheckerPage() {
     take: 100,
   });
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Contact Form &amp; Email Checker</h1>
+        <PageHeader title="Contact Form & Email Checker" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Read-only diagnosis of a site&apos;s contact forms and email setup,
           separately and honestly: recognised form plugins and their
@@ -27,6 +28,7 @@ export default async function ContactEmailCheckerPage() {
           delivery. A complete configuration and present DNS records still do
           not guarantee that mail reaches an inbox.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <ContactEmailCheckerForm websites={websites.map((w) => ({ id: w.id, name: w.name, normalizedUrl: w.normalizedUrl }))} />
         </div>
@@ -47,6 +49,6 @@ export default async function ContactEmailCheckerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

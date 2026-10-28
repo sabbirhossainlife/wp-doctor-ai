@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import WebsiteForm from "../../../../components/WebsiteForm";
 import DeleteWebsiteButton from "../../../../components/DeleteWebsiteButton";
 import ConnectorPairing from "../../../../components/ConnectorPairing";
@@ -21,7 +21,7 @@ export default async function WebsiteDetailPage({ params }) {
   const snapshot = website.snapshots[0] || null;
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <p>
           <a className="font-medium text-blue-700 underline" href="/dashboard">← Back to dashboard</a>
@@ -97,6 +97,6 @@ export default async function WebsiteDetailPage({ params }) {
           <DeleteWebsiteButton websiteId={website.id} />
         </div>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import ConflictAiSection from "../../../../components/ConflictAiSection";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
@@ -32,7 +32,7 @@ export default async function ConflictReportPage({ params }) {
   const payload = diagnostic.snapshotPayload && typeof diagnostic.snapshotPayload === "object" ? diagnostic.snapshotPayload : {};
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">Conflict check report</h1>
         <dl className="mt-6 space-y-2 text-sm text-slate-700">
@@ -98,6 +98,6 @@ export default async function ConflictReportPage({ params }) {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

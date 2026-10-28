@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import ConflictCheckerForm from "../../../components/ConflictCheckerForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -28,9 +29,9 @@ export default async function PluginThemeCheckerPage() {
     };
   });
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Plugin &amp; Theme Conflict Checker</h1>
+        <PageHeader title="Plugin & Theme Conflict Checker" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Checks the last diagnostic snapshot your WordPress connector sent
           for PHP/WordPress requirement mismatches, declared plugin
@@ -38,6 +39,7 @@ export default async function PluginThemeCheckerPage() {
           guessing. The live site is not modified: nothing is deactivated,
           switched, or changed.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <ConflictCheckerForm websites={view} />
         </div>
@@ -60,6 +62,6 @@ export default async function PluginThemeCheckerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

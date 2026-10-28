@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import ElementorCheckerForm from "../../../components/ElementorCheckerForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -28,9 +29,9 @@ export default async function ElementorCheckerPage() {
     };
   });
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Elementor &amp; Layout Checker</h1>
+        <PageHeader title="Elementor & Layout Checker" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Checks the last diagnostic snapshot your WordPress connector sent
           for Elementor presence, Elementor Pro status, declared version
@@ -39,6 +40,7 @@ export default async function ElementorCheckerPage() {
           is not modified, nothing is deactivated or switched, no page is
           rendered, and no screenshot is analysed.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <ElementorCheckerForm websites={view} />
         </div>
@@ -67,6 +69,6 @@ export default async function ElementorCheckerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

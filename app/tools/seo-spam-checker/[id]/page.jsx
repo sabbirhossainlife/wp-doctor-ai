@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import SeoAiSection from "../../../../components/SeoAiSection";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
@@ -55,7 +55,7 @@ export default async function SeoDetailPage({ params }) {
   const snapshotDate = diagnostic.snapshotReceivedAt ? new Date(diagnostic.snapshotReceivedAt).toLocaleString() : "not applicable (URL-only run)";
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">SEO diagnostic report</h1>
         <p className="mt-2 text-slate-600">
@@ -125,6 +125,6 @@ export default async function SeoDetailPage({ params }) {
 
         <SeoAiSection diagnosticId={diagnostic.id} initial={publicSeoAnalysis(diagnostic.aiAnalysis)} />
       </main>
-    </Container>
+    </PageContainer>
   );
 }

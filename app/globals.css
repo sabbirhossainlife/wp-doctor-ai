@@ -1,15 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  /* Design tokens — Milestone 0 app shell */
-  --color-ink: #0b1220;
+  /* Design tokens — "Premium Clinical Diagnostics meets Modern SaaS".
+     Existing token names are kept working (text-ink, bg-paper, accent). */
+  --color-ink: #0f172a;
   --color-ink-soft: #1e293b;
+  --color-ink-secondary: #475569;
   --color-paper: #f8fafc;
+  --color-surface: #ffffff;
   --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
   --color-accent-soft: #dbeafe;
-  --color-success: #15803d;
-  --color-warning: #b45309;
-  --color-danger: #b91c1c;
+  --color-cyan-accent: #06b6d4;
+  --color-border: #e2e8f0;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-error: #dc2626;
   --radius-card: 0.75rem;
   --font-sans: ui-sans-system, system-ui, -apple-system, "Segoe UI", Roboto,
     sans-serif;
@@ -19,4 +26,59 @@ body {
   background-color: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* Visible focus for keyboard users (WCAG 2.2 AA). */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Restrained micro-interactions: transform/opacity only, 150–250ms. */
+a,
+button {
+  transition:
+    color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+/* Forms stack comfortably on mobile: full-width controls, reachable
+   primary actions, no fixed widths forcing overflow. */
+main form input,
+main form select,
+main form textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+main form button[type="submit"],
+main form button:not([type]) {
+  min-height: 44px;
+}
+
+/* Wide tables scroll inside their own region instead of pushing the
+   page sideways. No global overflow-x hidden is used anywhere. */
+main table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Long URLs, IDs and error messages wrap instead of overflowing. */
+main {
+  overflow-wrap: break-word;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

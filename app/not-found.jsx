@@ -1,8 +1,8 @@
-import Container from "../components/Container";
+import PageContainer from "../components/PageContainer";
 
 export default function NotFound() {
   return (
-    <Container>
+    <PageContainer>
       <main className="py-16">
         <h1 className="text-3xl font-bold">Page not found</h1>
         <p className="mt-3 text-slate-600">
@@ -14,6 +14,6 @@ export default function NotFound() {
           </a>
         </p>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

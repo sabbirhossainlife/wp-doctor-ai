@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Container from "../../../../components/Container";
+import PageContainer from "../../../../components/PageContainer";
 import { getCurrentUser } from "../../../../lib/session";
 import { prisma } from "../../../../lib/prisma";
 
@@ -25,7 +25,7 @@ export default async function SslHistoryPage({ searchParams }) {
   if (page > totalPages) page = totalPages;
 
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
         <h1 className="text-3xl font-bold">SSL check history</h1>
         <p className="mt-2 text-slate-600">Real SSL reports belonging to your account only. Re-scans create new reports; old reports are never overwritten.</p>
@@ -61,6 +61,6 @@ export default async function SslHistoryPage({ searchParams }) {
           </p>
         ) : null}
       </main>
-    </Container>
+    </PageContainer>
   );
 }

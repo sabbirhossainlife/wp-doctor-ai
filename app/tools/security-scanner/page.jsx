@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import Container from "../../../components/Container";
+import PageContainer from "../../../components/PageContainer";
+import PageHeader from "../../../components/PageHeader";
 import SecurityScannerForm from "../../../components/SecurityScannerForm";
 import { getCurrentUser } from "../../../lib/session";
 import { prisma } from "../../../lib/prisma";
@@ -13,9 +14,9 @@ export default async function SecurityScannerPage() {
     take: 100,
   });
   return (
-    <Container>
+    <PageContainer>
       <main className="py-12">
-        <h1 className="text-3xl font-bold">Security &amp; Vulnerability Scanner</h1>
+        <PageHeader title="Security & Vulnerability Scanner" backHref="/dashboard" backLabel="Back to dashboard">
         <p className="mt-3 text-slate-600">
           Read-only, evidence-based security diagnosis for a registered WordPress site:
           installed core, plugin, and theme versions are matched against advisories from
@@ -26,6 +27,7 @@ export default async function SecurityScannerPage() {
           list of sensitive paths. Nothing is exploited, logged into, submitted, or
           changed — and no result here ever means a site is completely secure.
         </p>
+        </PageHeader>
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
           <SecurityScannerForm websites={websites.map((w) => ({ id: w.id, name: w.name, normalizedUrl: w.normalizedUrl }))} />
         </div>
@@ -47,6 +49,6 @@ export default async function SecurityScannerPage() {
           </p>
         </section>
       </main>
-    </Container>
+    </PageContainer>
   );
 }

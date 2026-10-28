@@ -1,112 +1,84 @@
 "use client";
 
-import Container from "./Container";
+import { useState } from "react";
+import PageContainer from "./PageContainer";
 import LogoutButton from "./LogoutButton";
+import ToolsDropdown from "./ToolsDropdown";
+import MobileNavigationDrawer from "./MobileNavigationDrawer";
 import { useSession } from "../lib/auth-client";
 
+// Single-row header. Desktop (lg and up): brand + Home/Dashboard + one
+// Tools dropdown + account actions. Below lg the desktop nav is replaced
+// by a compact brand + hamburger drawer, switching before nav can overflow.
+// The 12 tool links are never rendered as a horizontal row.
 export default function SiteHeader() {
   const { data: session, isPending } = useSession();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <Container>
-        <nav className="flex items-center justify-between py-4" aria-label="Primary">
-          <a href="/" className="text-base font-bold text-ink">
+    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur-sm">
+      <PageContainer>
+        <nav className="flex min-w-0 items-center justify-between gap-2 py-3" aria-label="Primary">
+          <a
+            href="/"
+            className="min-w-0 shrink-0 whitespace-nowrap rounded text-base font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
             WP Doctor AI
           </a>
-          <ul className="flex items-center gap-5 text-sm">
-            <li>
-              <a href="/" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                Home
+          <div className="hidden min-w-0 items-center gap-1 lg:flex">
+            <a
+              href="/"
+              className="flex min-h-[44px] items-center rounded-lg px-3 py-2 text-sm font-medium text-ink-secondary transition-colors duration-200 hover:bg-slate-100 hover:text-ink"
+            >
+              Home
+            </a>
+            {!isPending && session ? (
+              <a
+                href="/dashboard"
+                className="flex min-h-[44px] items-center rounded-lg px-3 py-2 text-sm font-medium text-ink-secondary transition-colors duration-200 hover:bg-slate-100 hover:text-ink"
+              >
+                Dashboard
               </a>
-            </li>
+            ) : null}
+            <ToolsDropdown />
+          </div>
+          <div className="hidden min-w-0 items-center gap-2 lg:flex" aria-label="Account">
             {isPending ? null : session ? (
-              <>
-                <li>
-                  <a href="/dashboard" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Dashboard
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/error-checker" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Error Checker
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/plugin-theme-checker" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Plugin &amp; Theme Checker
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/woocommerce-checkout-checker" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    WooCommerce Checker
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/elementor-layout-checker" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Elementor Checker
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/website-speed-analyzer" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Speed Analyzer
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/ssl-redirect-checker" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    SSL Checker
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/contact-email-checker" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Contact &amp; Email Checker
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/security-scanner" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Security Scanner
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/malware-recovery" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Malware Recovery
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/backup-restore-migration" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Backup &amp; Migration
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/seo-spam-checker" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    SEO Checker
-                  </a>
-                </li>
-                <li>
-                  <a href="/tools/uptime-monitor" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Uptime Monitor
-                  </a>
-                </li>
-                <li>
-                  <LogoutButton className="rounded-lg border border-slate-300 px-3 py-1 text-sm font-medium" />
-                </li>
-              </>
+              <LogoutButton className="flex min-h-[44px] items-center rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-slate-100" />
             ) : (
               <>
-                <li>
-                  <a href="/login" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Log in
-                  </a>
-                </li>
-                <li>
-                  <a href="/register" className="font-medium text-slate-700 underline-offset-4 hover:underline">
-                    Register
-                  </a>
-                </li>
+                <a
+                  href="/login"
+                  className="flex min-h-[44px] items-center rounded-lg px-3 py-2 text-sm font-medium text-ink-secondary transition-colors duration-200 hover:bg-slate-100 hover:text-ink"
+                >
+                  Log in
+                </a>
+                <a
+                  href="/register"
+                  className="flex min-h-[44px] items-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-hover"
+                >
+                  Register
+                </a>
               </>
             )}
-          </ul>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-expanded={drawerOpen}
+            aria-haspopup="dialog"
+            aria-label="Open menu"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl text-ink hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+          >
+            ☰
+          </button>
         </nav>
-      </Container>
+      </PageContainer>
+      <MobileNavigationDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        session={isPending ? null : session}
+      />
     </header>
   );
 }
